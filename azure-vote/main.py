@@ -21,6 +21,7 @@ from opencensus.trace.samplers import ProbabilitySampler
 from opencensus.trace.tracer import Tracer
 from opencensus.ext.flask.flask_middleware import FlaskMiddleware
 from opencensus.trace.samplers import ProbabilitySampler
+from applicationinsights.flask.ext import AppInsights
 
 
 # App Insights
@@ -73,6 +74,7 @@ tracer = Tracer(
 app = Flask(__name__)
 
 # Requests
+# Flask middleware
 middleware = FlaskMiddleware(
     app,
     exporter=AzureExporter(
@@ -121,10 +123,9 @@ def index():
 
         # Get current values
         vote1 = r.get(button1).decode("utf-8")
-        # TODO: use tracer object to trace cat vote
+        # Tracer for azure appinsights
         tracer.span(name="Button 1 cat vote is clicked")
         vote2 = r.get(button2).decode("utf-8")
-        # TODO: use tracer object to trace dog vote
         tracer.span(name="Button 2 dog vote is clicked")
 
         # Return index with values
@@ -143,11 +144,10 @@ def index():
 
             vote1 = r.get(button1).decode("utf-8")
             properties = {"custom_dimensions": {"Cats Vote": vote1}}
-            # TODO: use logger object to log cat vote
+            # logger for appinsights
             logger.warning("Cat Vote", extra=properties)
             vote2 = r.get(button2).decode("utf-8")
             properties = {"custom_dimensions": {"Dogs Vote": vote2}}
-            # TODO: use logger object to log dog vote
             logger.warning("Dog Vote", extra=properties)
 
             # Empty table and return results
