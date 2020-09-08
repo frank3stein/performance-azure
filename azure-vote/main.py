@@ -26,7 +26,7 @@ from opencensus.trace.samplers import ProbabilitySampler
 # App Insights
 # TODO: Import required libraries for App Insights
 
-# tc = TelemetryClient("InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7")
+# tc = TelemetryClient("InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/")
 # tc.track_event("Test event", {"foo": "bar"}, {"baz": 42})
 # tc.flush()
 
@@ -52,7 +52,7 @@ instrumentation_key = os.environ.get("INSTRUMENTATION_KEY")
 logger = logging.getLogger(__name__)
 logger.addHandler(
     AzureLogHandler(
-        connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7"
+        connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/"
     )
 )
 
@@ -60,13 +60,13 @@ logger.addHandler(
 # Metrics
 exporter = metrics_exporter.new_metrics_exporter(
     enable_standard_metrics=True,
-    connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7",
+    connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/",
 )
 
 # Tracing
 tracer = Tracer(
     exporter=AzureExporter(
-        connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7"
+        connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/"
     ),
     sampler=ProbabilitySampler(1.0),
 )
@@ -76,7 +76,7 @@ app = Flask(__name__)
 middleware = FlaskMiddleware(
     app,
     exporter=AzureExporter(
-        connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7"
+        connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/"
     ),
     sampler=ProbabilitySampler(rate=1.0),
 )
