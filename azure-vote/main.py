@@ -27,7 +27,7 @@ from applicationinsights.flask.ext import AppInsights
 # App Insights
 # TODO: Import required libraries for App Insights
 
-# tc = TelemetryClient("InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/")
+# tc = TelemetryClient("InstrumentationKey=264396b1-b060-4052-ad86-5e2f0e0c842b;IngestionEndpoint=https://westeurope-1.in.applicationinsights.azure.com/")
 # tc.track_event("Test event", {"foo": "bar"}, {"baz": 42})
 # tc.flush()
 
@@ -47,13 +47,14 @@ from applicationinsights.flask.ext import AppInsights
 # middleware = # TODO: Setup flask middleware
 
 
-instrumentation_key = os.environ.get("INSTRUMENTATION_KEY")
-
+instrumentation_key = "264396b1-b060-4052-ad86-5e2f0e0c842b"
+print(instrumentation_key)
+tc = TelemetryClient(instrumentation_key)
 # logging
 logger = logging.getLogger(__name__)
 logger.addHandler(
     AzureLogHandler(
-        connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/"
+        connection_string="InstrumentationKey=264396b1-b060-4052-ad86-5e2f0e0c842b"
     )
 )
 
@@ -61,13 +62,13 @@ logger.addHandler(
 # Metrics
 exporter = metrics_exporter.new_metrics_exporter(
     enable_standard_metrics=True,
-    connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/",
+    connection_string="InstrumentationKey=264396b1-b060-4052-ad86-5e2f0e0c842b",
 )
 
 # Tracing
 tracer = Tracer(
     exporter=AzureExporter(
-        connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/"
+        connection_string="InstrumentationKey=264396b1-b060-4052-ad86-5e2f0e0c842b"
     ),
     sampler=ProbabilitySampler(1.0),
 )
@@ -78,7 +79,7 @@ app = Flask(__name__)
 middleware = FlaskMiddleware(
     app,
     exporter=AzureExporter(
-        connection_string="InstrumentationKey=cf0c486d-5ddd-43ea-b85b-ab0ba38a84f7;IngestionEndpoint=https://westus2-0.in.applicationinsights.azure.com/"
+        connection_string="InstrumentationKey=264396b1-b060-4052-ad86-5e2f0e0c842b"
     ),
     sampler=ProbabilitySampler(rate=1.0),
 )
@@ -125,8 +126,12 @@ def index():
         vote1 = r.get(button1).decode("utf-8")
         # Tracer for azure appinsights
         tracer.span(name="Button 1 cat vote is clicked")
+        logger.warning(f"Cat button is clicked {vote1} times")
+        tc.track_event("Cat button is clicked", {"clickcount": r.get(button1)})
         vote2 = r.get(button2).decode("utf-8")
+        tc.track_event("Dog button is clicked", {"clickcount": r.get(button2)})
         tracer.span(name="Button 2 dog vote is clicked")
+        logger.warning(f"Dog button is clicked {vote2} time")
 
         # Return index with values
         return render_template(
@@ -143,12 +148,15 @@ def index():
         if request.form["vote"] == "reset":
 
             vote1 = r.get(button1).decode("utf-8")
-            properties = {"custom_dimensions": {"Cats Vote": vote1}}
+            properties = {"custom_dimensions": {"Cats Vote": r.get(button1)}}
+            print(f"Cat button is clicked {vote1} times")
+            logger.warning(f"Cat button is clicked {vote1} times in total.")
             # logger for appinsights
-            logger.warning("Cat Vote", extra=properties)
+            print(f"Cat button has been clicked {r.get(button1)} times.")
+            logger.warning("Cat Votes at Form Submit", extra=properties)
             vote2 = r.get(button2).decode("utf-8")
-            properties = {"custom_dimensions": {"Dogs Vote": vote2}}
-            logger.warning("Dog Vote", extra=properties)
+            properties = {"DogsVote": r.get(button2)}
+            logger.warning("Dog Votes at Form Submit", extra=properties)
 
             # Empty table and return results
             r.set(button1, 0)
@@ -168,10 +176,21 @@ def index():
             # Insert vote result into DB
             vote = request.form["vote"]
             r.incr(vote, 1)
-
             # Get current values
             vote1 = r.get(button1).decode("utf-8")
+
             vote2 = r.get(button2).decode("utf-8")
+            if vote == "Cats":
+                print("running")
+                logger.warning(
+                    f"%s have been clicked %s times" % (vote, vote1),
+                    extra={"custom_dimensions": {"Cats Vote": vote1}},
+                )
+            else:
+                logger.warning(
+                    f"{vote} have been clicked {vote2} times",
+                    extra={"custom_dimensions": {"Dogs Vote": r.get(button2)}},
+                )
 
             # Return results
             return render_template(
@@ -186,6 +205,6 @@ def index():
 
 if __name__ == "__main__":
     # comment line below when deploying to VMSS
-    # app.run()  # local
+    app.run()  # local
     # uncomment the line below before deployment to VMSS
-    app.run(host="0.0.0.0", threaded=True, debug=True)  # remote
+    # app.run(host="0.0.0.0", threaded=True, debug=True)  # remote
